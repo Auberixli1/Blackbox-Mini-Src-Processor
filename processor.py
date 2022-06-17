@@ -30,6 +30,7 @@ def get_directory(root, org_dir, src_dir):
 
     return new_root
 
+
 def convert_file(root, file, new_root):
     """
     Converts the SrcML file to raw Java file and writes it to the new directory.
@@ -38,9 +39,10 @@ def convert_file(root, file, new_root):
     :param new_root: The new root path to save to
     :return: None
     """
+    xml_tree = ET.parse(os.path.join(root, file)).getroot()
+    latest_version = xml_tree.findall('unit').pop()
 
-    xml_tree = ET.parse(os.path.join(root, file))
-    raw_src = ET.tostring(xml_tree.getroot(), encoding='unicode', method='text')
+    raw_src = ET.tostring(latest_version, encoding='unicode', method='text')
 
     new_file = file.replace(".xml", ".java")
 
@@ -71,6 +73,7 @@ def main(org_dir, src_dir):
 
     count = 0
     for root, dirs, files in os.walk(org_dir):
+        print(files)
         # For each file in partition convert and save
         new_root = get_directory(root, org_dir, src_dir)
 
@@ -79,12 +82,7 @@ def main(org_dir, src_dir):
                 is_error = convert_file(root, file, new_root)
 
                 if is_error:
-                    logging.error("Critical error... Exiting")
-                    return
-
-        count += 1
-        if count == 3:
-            return
+                    logging.fatal("Critical error... Exiting")
 
     print("Complete, new files are in", args[1])
             
