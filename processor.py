@@ -1,5 +1,6 @@
 import logging
 import sys
+import json
 import os
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
@@ -42,9 +43,22 @@ def convert_file(root, file, new_root):
     xml_tree = ElementTree.parse(os.path.join(root, file)).getroot()
     latest_version = xml_tree.findall('unit').pop()
 
+    compile_result = latest_version.attrib['compile-success']
+
+    compile_element = latest_version.find('./compile-error')
+
+    if compile_element is None:
+        compile_message = None
+    else:
+        latest_version.remove(compile_element)
+        compile_message = ElementTree.tostring(compile_element, encoding='unicode',method='text')
+
     raw_src = ElementTree.tostring(latest_version, encoding='unicode', method='text')
 
-    new_file = file.replace(".xml", ".java")
+    output_dict = {'compile_result': compile_result, 'compile_message': compile_message, 'source': raw_src}
+    json_string = json.dumps(output_dict, indent=2)
+
+    new_file = file.replace(".xml", ".json")
 
     new_path = os.path.join(new_root, new_file)
     logging.info("Converting: " + new_path)
@@ -52,7 +66,8 @@ def convert_file(root, file, new_root):
     if not os.path.exists(new_path):
         try:
             with open(new_path, 'w') as f:
-                f.write(raw_src)
+                f.write(json_string)
+                logging.info("Converted: " + new_path)
         except EnvironmentError as e:
             logging.fatal("ERROR SAVING FILE - Unable to write to file, "
                           "please check permissions and the log file for the exception.")
