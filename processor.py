@@ -1,6 +1,8 @@
 import logging
 import sys
-import json
+import textwrap
+from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import LiteralScalarString
 import os
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
@@ -13,6 +15,21 @@ logging.basicConfig(handlers=[
     ],
     level=logging.ERROR,
     format='%(asctime)s - %(message)s')
+
+"""
+Setup the YAML library, to enable dumping the processed to a readable YAML format
+"""
+yaml = YAML()
+
+
+def multiline_handler(string):
+    """
+    USed to convert a multiline string into a readable YAML format.
+    Adapted from: https://stackoverflow.com/questions/57382525/can-i-control-the-formatting-of-multiline-strings
+    :param string: The multiline string to convert
+    :return: The multiline string in the YAML literal style
+    """
+    return LiteralScalarString(textwrap.dedent(string))
 
 
 def get_directory(root, input_dir, output_dir):
@@ -55,24 +72,26 @@ def convert_file(root, file, new_root):
 
     raw_src = ElementTree.tostring(latest_version, encoding='unicode', method='text')
 
-    output_dict = {'compile_result': compile_result, 'compile_message': compile_message, 'source': raw_src}
-    json_string = json.dumps(output_dict, indent=2)
+    output_dict = {'compile_result': compile_result, 'compile_message': compile_message,
+                   'source': multiline_handler(raw_src)}
 
-    new_file = file.replace(".xml", ".json")
+    new_file = file.replace(".xml", ".yaml")
 
     new_path = os.path.join(new_root, new_file)
     logging.info("Converting: " + new_path)
 
     if not os.path.exists(new_path):
         try:
-            with open(new_path, 'w') as f:
-                f.write(json_string)
+            with open(new_path, 'w') as output_file:
+                yaml.dump(output_dict, output_file)
                 logging.info("Converted: " + new_path)
         except EnvironmentError as e:
             logging.fatal("ERROR SAVING FILE - Unable to write to file, "
                           "please check permissions and the log file for the exception.")
             logging.fatal(e)
             return True
+    else:
+        logging.info("File already exists: " + new_path)
 
 
 def main(input_dir, output_dir):
