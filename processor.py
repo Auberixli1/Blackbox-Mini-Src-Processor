@@ -24,7 +24,7 @@ yaml = YAML()
 
 def multiline_handler(string):
     """
-    USed to convert a multiline string into a readable YAML format.
+    Used to convert a multiline string into a readable YAML format.
     Adapted from: https://stackoverflow.com/questions/57382525/can-i-control-the-formatting-of-multiline-strings
     :param string: The multiline string to convert
     :return: The multiline string in the YAML literal style
@@ -101,7 +101,7 @@ def main(input_dir, output_dir):
     :param output_dir: The directory to save the Java files to.
     :return: None
     """
-    if not os.path.isdir(input_dir) or not os.path.isdir(output_dir):
+    if not os.path.isdir(input_dir):
         logging.fatal("Either the origin directory or the destination directory are not valid")
         return
 
