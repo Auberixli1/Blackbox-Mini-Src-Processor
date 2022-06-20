@@ -62,17 +62,20 @@ def convert_file(root, file, new_root):
 
     compile_result = latest_version.attrib['compile-success']
 
-    compile_element = latest_version.find('./compile-error')
+    compile_elements = latest_version.findall('compile-error')
 
-    if compile_element is None:
-        compile_message = None
-    else:
-        latest_version.remove(compile_element)
-        compile_message = ElementTree.tostring(compile_element, encoding='unicode',method='text')
+    compile_messages = []
+    for element in compile_elements:
+        latest_version.remove(element)
+        compile_messages.append({
+            'message': ElementTree.tostring(element, encoding='unicode', method='text'),
+            'start': element.attrib['start'],
+            'end': element.attrib['end']
+        })
 
     raw_src = ElementTree.tostring(latest_version, encoding='unicode', method='text')
 
-    output_dict = {'compile_result': compile_result, 'compile_message': compile_message,
+    output_dict = {'compile_result': compile_result, 'compile_messages': compile_messages,
                    'source': multiline_handler(raw_src)}
 
     new_file = file.replace(".xml", ".yaml")
