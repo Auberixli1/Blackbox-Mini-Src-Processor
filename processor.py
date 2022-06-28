@@ -1,7 +1,7 @@
 import logging
 import sys
 import textwrap
-from ruamel.yaml import YAML
+import json
 from ruamel.yaml.scalarstring import LiteralScalarString
 import os
 import xml.etree.ElementTree as ElementTree
@@ -15,11 +15,6 @@ logging.basicConfig(handlers=[
     ],
     level=logging.ERROR,
     format='%(asctime)s - %(message)s')
-
-"""
-Setup the YAML library, to enable dumping the processed to a readable YAML format
-"""
-yaml = YAML()
 
 
 def multiline_handler(string):
@@ -49,6 +44,24 @@ def get_directory(root, input_dir, output_dir):
     return new_root
 
 
+def write_file(data, path):
+    """
+    Used to write the Java Source and the Metadata to the file system.
+    :param data: The data in string form that needs to be written
+    :param path: The path where the data should be saved
+    :return: None
+    """
+    if not os.path.exists(path):
+        try:
+            with open(path, 'w') as file:
+                file.write(data)
+        except EnvironmentError as e:
+            # Re-raise exception to catch in callee method.
+            raise e
+    else:
+        logging.info("File already exists: " + path)
+
+
 def convert_file(root, file, new_root):
     """
     Converts the SrcML file to raw Java file and writes it to the new directory.
@@ -75,26 +88,26 @@ def convert_file(root, file, new_root):
 
     raw_src = ElementTree.tostring(latest_version, encoding='unicode', method='text')
 
-    output_dict = {'compile_result': compile_result, 'compile_messages': compile_messages,
-                   'source': multiline_handler(raw_src)}
+    metadata = json.dumps({'compile_result': compile_result, 'compile_messages': compile_messages})
 
-    new_file = file.replace(".xml", ".yaml")
+    source_file = file.replace(".xml", ".java")
+    meta_file = file.replace(".xml", ".json")
 
-    new_path = os.path.join(new_root, new_file)
-    logging.info("Converting: " + new_path)
+    source_path = os.path.join(new_root, source_file)
+    meta_path = os.path.join(new_root, meta_file)
 
-    if not os.path.exists(new_path):
-        try:
-            with open(new_path, 'w') as output_file:
-                yaml.dump(output_dict, output_file)
-                logging.info("Converted: " + new_path)
-        except EnvironmentError as e:
-            logging.fatal("ERROR SAVING FILE - Unable to write to file, "
-                          "please check permissions and the log file for the exception.")
-            logging.fatal(e)
-            return True
-    else:
-        logging.info("File already exists: " + new_path)
+    try:
+        logging.info("Converting: " + source_path + "/.json")
+
+        write_file(raw_src, source_path)
+        write_file(metadata, meta_path)
+
+        logging.info("Converted: " + source_path + "/.json")
+    except EnvironmentError as e:
+        logging.fatal("ERROR SAVING FILE - Unable to write to file: "
+                      "please check permissions and the log file for the exception.")
+        logging.fatal(e)
+        return True
 
 
 def main(input_dir, output_dir):
