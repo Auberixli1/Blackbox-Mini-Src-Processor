@@ -1,8 +1,6 @@
 import logging
 import sys
-import textwrap
 import json
-from ruamel.yaml.scalarstring import LiteralScalarString
 import os
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
@@ -17,17 +15,7 @@ logging.basicConfig(handlers=[
     format='%(asctime)s - %(message)s')
 
 
-def multiline_handler(string):
-    """
-    Used to convert a multiline string into a readable YAML format.
-    Adapted from: https://stackoverflow.com/questions/57382525/can-i-control-the-formatting-of-multiline-strings
-    :param string: The multiline string to convert
-    :return: The multiline string in the YAML literal style
-    """
-    return LiteralScalarString(textwrap.dedent(string))
-
-
-def get_directory(root, input_dir, output_dir):
+def get_directory(root: str, input_dir: str, output_dir: str) -> str:
     """
     Used to transform the original directory to the new directory, and creates the directory if needed
     :param root: Root directory to convert
@@ -44,7 +32,7 @@ def get_directory(root, input_dir, output_dir):
     return new_root
 
 
-def write_file(data, path):
+def write_file(data: str, path: str) -> None:
     """
     Used to write the Java Source and the Metadata to the file system.
     :param data: The data in string form that needs to be written
@@ -62,13 +50,13 @@ def write_file(data, path):
         logging.info("File already exists: " + path)
 
 
-def convert_file(root, file, new_root):
+def convert_file(root: str, file: str, new_root: str) -> bool:
     """
     Converts the SrcML file to raw Java file and writes it to the new directory.
     :param root: The root directory of the old file
     :param file: The file name to convert
     :param new_root: The new root path to save to
-    :return: None
+    :return: Returns true if an error has occurred, or false if no error has occurred
     """
     xml_tree = ElementTree.parse(os.path.join(root, file)).getroot()
     latest_version = xml_tree.findall('unit').pop()
@@ -109,8 +97,10 @@ def convert_file(root, file, new_root):
         logging.fatal(e)
         return True
 
+    return False
 
-def main(input_dir, output_dir):
+
+def main(input_dir: str, output_dir: str) -> None:
     """
     Main processor for converting SrcML to raw source.
     :param input_dir: The original directory to convert
@@ -122,7 +112,6 @@ def main(input_dir, output_dir):
         return
 
     for root, dirs, files in os.walk(input_dir):
-        print(files)
         # For each file in partition convert and save
         new_root = get_directory(root, input_dir, output_dir)
 
@@ -132,6 +121,7 @@ def main(input_dir, output_dir):
 
                 if is_error:
                     logging.fatal("Critical error... Exiting")
+                    return
 
     print("Complete, new files are in", args[1])
             
