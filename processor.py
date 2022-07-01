@@ -5,6 +5,8 @@ import os
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
 
+from Exceptions import SourceEmptyError
+
 VERSION = 0.1
 
 logging.basicConfig(handlers=[
@@ -50,7 +52,7 @@ def write_file(data: str, path: str) -> None:
         logging.info("File already exists: " + path)
 
 
-def convert_file(root: str, file: str, new_root: str) -> bool:
+def convert_file(root: str, file: str, new_root: str) -> None:
     """
     Converts the SrcML file to raw Java file and writes it to the new directory.
     :param root: The root directory of the old file
@@ -59,7 +61,14 @@ def convert_file(root: str, file: str, new_root: str) -> bool:
     :return: Returns true if an error has occurred, or false if no error has occurred
     """
     xml_tree = ElementTree.parse(os.path.join(root, file)).getroot()
-    latest_version = xml_tree.findall('unit').pop()
+
+    versions = xml_tree.findall('unit')
+
+    if len(versions) == 0:
+        logging.critical("Source file empty: " + root + "/" + file)
+        raise SourceEmptyError
+
+    latest_version = versions.pop()
 
     compile_result = latest_version.attrib['compile-success']
 
@@ -95,9 +104,7 @@ def convert_file(root: str, file: str, new_root: str) -> bool:
         logging.fatal("ERROR SAVING FILE - Unable to write to file: "
                       "please check permissions and the log file for the exception.")
         logging.fatal(e)
-        return True
-
-    return False
+        raise e
 
 
 def main(input_dir: str, output_dir: str) -> None:
@@ -117,11 +124,14 @@ def main(input_dir: str, output_dir: str) -> None:
 
         for file in files:
             if file.endswith(".xml"):
-                is_error = convert_file(root, file, new_root)
 
-                if is_error:
+                try:
+                    convert_file(root, file, new_root)
+                except EnvironmentError:
                     logging.fatal("Critical error... Exiting")
                     return
+                except SourceEmptyError:
+                    logging.critical("Empty source body... Continuing...")
 
     print("Complete, new files are in", args[1])
             
