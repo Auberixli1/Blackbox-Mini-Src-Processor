@@ -60,7 +60,10 @@ def convert_file(root: str, file: str, new_root: str) -> None:
     :param new_root: The new root path to save to
     :return: Returns true if an error has occurred, or false if no error has occurred
     """
-    xml_tree = ElementTree.parse(os.path.join(root, file)).getroot()
+
+    path = os.path.join(root, file)
+    with open(path, 'rb') as src_ml:
+        xml_tree = ElementTree.parse(src_ml).getroot()
 
     versions = xml_tree.findall('unit')
 
