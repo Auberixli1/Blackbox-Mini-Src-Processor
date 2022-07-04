@@ -31,7 +31,8 @@ def process_directory(input_dir: str, output_dir: str, input_subdirs: list) -> N
     diff = set(input_subdirs) - set(dir_cmp.common_dirs)
 
     if len(diff) > 0:
-        print("Difference between: " + input_dir + " and " + output_dir + ":\n" + str(diff))
+        print("Difference between: " + input_dir + " and " + output_dir + "(" + str(len(diff)) + ")")
+        logging.info(str(diff))
     else:
         logging.debug("No difference between " + input_dir + " and " + output_dir)
 
@@ -48,11 +49,15 @@ def process_file(input_dir: str, output_dir: str) -> None:
     source_files = []
     meta_files = []
 
-    for f in os.listdir(output_dir):
-        if f.endswith(".java"):
-            source_files.append(f.replace(".java", ""))
-        elif f.endswith(".json"):
-            meta_files.append(f.replace(".json", ""))
+    try:
+        for f in os.listdir(output_dir):
+            if f.endswith(".java"):
+                source_files.append(f.replace(".java", ""))
+            elif f.endswith(".json"):
+                meta_files.append(f.replace(".json", ""))
+    except FileNotFoundError as e:
+        logging.critical("File not found: " + e)
+        return
 
     source_diff = input_files - set(source_files)
     meta_diff = input_files- set(meta_files)
