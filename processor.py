@@ -4,17 +4,22 @@ import json
 import os
 import xml.etree.ElementTree as ElementTree
 from pathlib import Path
+import multiprocessing as mp
+from multiprocessing_logging import install_mp_handler
 
 from Exceptions import SourceEmptyError
 
 VERSION = 0.1
+MULTIPROCESS_DIVISOR = 4
 
 logging.basicConfig(handlers=[
         logging.FileHandler("debug.log"),
         logging.StreamHandler()
     ],
     level=logging.ERROR,
-    format='%(asctime)s - %(message)s')
+    format='%(processName)s - %(asctime)s - %(message)s')
+
+install_mp_handler()
 
 
 def get_directory(root: str, input_dir: str, output_dir: str) -> str:
@@ -98,7 +103,7 @@ def convert_file(root: str, file: str, new_root: str) -> None:
 
     try:
         logging.info("Converting: " + source_path + "/.json")
-
+        # print("Converting", source_path, " on ", mp.current_process())
         write_file(raw_src, source_path)
         write_file(metadata, meta_path)
 
@@ -110,18 +115,15 @@ def convert_file(root: str, file: str, new_root: str) -> None:
         raise e
 
 
-def main(input_dir: str, output_dir: str) -> None:
+def process(root, input_dir, output_dir):
     """
-    Main processor for converting SrcML to raw source.
-    :param input_dir: The original directory to convert
-    :param output_dir: The directory to save the Java files to.
+    Used to process the top level directories using multi-threaded application
+    :param root: The root directory
+    :param input_dir: The input directory
+    :param output_dir: The Output directory
     :return: None
     """
-    if not os.path.isdir(input_dir):
-        logging.fatal("Either the origin directory or the destination directory are not valid")
-        return
-
-    for root, dirs, files in os.walk(input_dir):
+    for root, dirs, files in os.walk(root):
         # For each file in partition convert and save
         new_root = get_directory(root, input_dir, output_dir)
 
@@ -136,6 +138,27 @@ def main(input_dir: str, output_dir: str) -> None:
                 except SourceEmptyError:
                     logging.critical("Empty source body... Continuing...")
 
+
+def main(input_dir: str, output_dir: str) -> None:
+    """
+    Main processor for converting SrcML to raw source.
+    :param input_dir: The original directory to convert
+    :param output_dir: The directory to save the Java files to.
+    :return: None
+    """
+    if not os.path.isdir(input_dir):
+        logging.fatal("Either the origin directory or the destination directory are not valid")
+        return
+
+    pool = mp.Pool(mp.cpu_count() // MULTIPROCESS_DIVISOR)
+
+    for root in Path(input_dir).iterdir():
+        if root.is_dir():
+            print(root)
+            pool.apply_async(process, args=(root, input_dir, output_dir))
+
+    pool.close()
+    pool.join()
     print("Complete, new files are in", args[1])
             
 
