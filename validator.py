@@ -19,17 +19,21 @@ def main(input_dir, output_dir):
     input_reg = re.compile("^" + input_dir + "((/[A-Za-z0-9-]+)+).xml")
     output_reg = re.compile("^" + output_dir + "((/[A-Za-z0-9\-]+)+)\.(java|json)")
 
-    input_files = (re.match(input_reg, os.path.join(root, file)).group(1)
-                   for root, _, files in os.walk(input_dir)
-                   for file in files if file.endswith(".xml"))
+    input_files = []
+    for root, _, files in os.walk(input_dir):
+        for file in files:
+            if file.endswith(".xml"):
+                input_files.append(re.match(input_reg, os.path.join(root, file)).group(1))
 
-    source_files = (re.match(output_reg, os.path.join(root, file)).group(1)
-                   for root, _, files in os.walk(output_dir)
-                   for file in files if file.endswith(".java"))
+    source_files = []
+    meta_files = []
 
-    meta_files = (re.match(output_reg, os.path.join(root, file)).group(1)
-                    for root, _, files in os.walk(output_dir)
-                    for file in files if file.endswith(".json"))
+    for root, _, files in os.walk(output_dir):
+        for file in files:
+            if file.endswith(".java"):
+                source_files.append(re.match(output_reg, os.path.join(root, file)).group(1))
+            elif file.endswith(".json"):
+                meta_files.append(re.match(output_reg, os.path.join(root, file)).group(1))
 
     logging.info("Found all files. Calculating difference...")
 
