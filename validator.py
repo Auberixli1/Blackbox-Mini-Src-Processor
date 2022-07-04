@@ -1,3 +1,4 @@
+import filecmp
 import os.path
 import sys
 import logging
@@ -13,36 +14,29 @@ logging.basicConfig(handlers=[
 VERSION = 0.1
 
 
+def find_diff(input_dir, output_dir):
+    input_subdirs = set(filter(os.path.isdir, os.listdir(input_dir)))
+    dir_cmp = filecmp.dircmp(input_dir, output_dir)
+
+    diff = input_subdirs - set(dir_cmp.common_dirs)
+
+    logging.debug("Difference between: " + input_dir + " and " + output_dir + ":\n" + str(diff))
+
+    if len(diff) > 0:
+        print("Difference between: " + input_dir + " and " + output_dir + ":\n" + str(diff))
+    else:
+        logging.debug("No difference between " + input_dir + " and " + output_dir)
+
+
 def main(input_dir, output_dir):
     logging.info("Finding files")
 
-    input_reg = re.compile("^" + input_dir + "((/[A-Za-z0-9-]+)+).xml")
-    output_reg = re.compile("^" + output_dir + "((/[A-Za-z0-9\-]+)+)\.(java|json)")
+    find_diff(input_dir, output_dir)
 
-    input_files = []
-    for root, _, files in os.walk(input_dir):
-        for file in files:
-            if file.endswith(".xml"):
-                input_files.append(re.match(input_reg, os.path.join(root, file)).group(1))
+    for root, dirs, _ in os.walk(input_dir):
+        new_root = root.replace(input_dir, output_dir)
+        find_diff(root, new_root)
 
-    source_files = []
-    meta_files = []
-
-    for root, _, files in os.walk(output_dir):
-        for file in files:
-            if file.endswith(".java"):
-                source_files.append(re.match(output_reg, os.path.join(root, file)).group(1))
-            elif file.endswith(".json"):
-                meta_files.append(re.match(output_reg, os.path.join(root, file)).group(1))
-
-    logging.info("Found all files. Calculating difference...")
-
-    source_diff = set(input_files) - set(source_files)
-    meta_diff = set(input_files) - set(meta_files)
-
-    logging.info("Missing Source files: " + " ".join(source_diff))
-    logging.info("Missing Meta files: " + " ".join(meta_diff))
-    logging.info("Difference between source and meta: " + " ".join(source_diff - meta_diff))
 
 
 if __name__ == '__main__':
@@ -51,6 +45,8 @@ if __name__ == '__main__':
 
     if "-v" in opts or "--verbose" in opts:
         logging.getLogger().setLevel(logging.INFO)
+    if "-vv" in opts:
+        logging.getLogger().setLevel(logging.DEBUG)
     if "--version" in opts:
         print(VERSION)
 
