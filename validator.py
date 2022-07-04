@@ -18,7 +18,14 @@ VERSION = 0.1
 MULTIPROCESS_DIVISOR = 4
 
 
-def process_directory(input_dir, output_dir, input_subdirs):
+def process_directory(input_dir: str, output_dir: str, input_subdirs: list) -> None:
+    """
+    Search for missing subdirectories
+    :param input_dir: The input directory to validate against
+    :param output_dir: The output directory to search
+    :param input_subdirs: The list of sub-directories in the input directory
+    :return: None
+    """
     dir_cmp = filecmp.dircmp(input_dir, output_dir)
 
     diff = set(input_subdirs) - set(dir_cmp.common_dirs)
@@ -29,7 +36,13 @@ def process_directory(input_dir, output_dir, input_subdirs):
         logging.debug("No difference between " + input_dir + " and " + output_dir)
 
 
-def process_file(input_dir, output_dir):
+def process_file(input_dir: str, output_dir: str) -> None:
+    """
+    Search for missing files
+    :param input_dir: The input directory to validate against
+    :param output_dir: The output directory to search
+    :return: None
+    """
     input_files = set([f.replace(".xml", "") for f in os.listdir(input_dir) if f.endswith(".xml")])
 
     source_files = []
@@ -55,16 +68,29 @@ def process_file(input_dir, output_dir):
         logging.debug("No missing meta files in: " + output_dir)
 
 
-def find_diff(input_dir, output_dir, input_subdirs):
+def find_diff(input_dir: str, output_dir: str, input_subdirs: list) -> None:
+    """
+    Processor to find the difference for lists of directories and files
+    :param input_dir: The input directory to validate against
+    :param output_dir: The output directory to search
+    :param input_subdirs: The list of sub-directories in the input directory
+    :return: None
+    """
     if len(input_subdirs) == 0:
-        logging.info("Processing files")
+        logging.debug("Processing files")
         process_file(input_dir, output_dir)
     else:
-        logging.info("Processing directory")
+        logging.debug("Processing directory")
         process_directory(input_dir, output_dir, input_subdirs)
 
 
-def main(input_dir, output_dir):
+def main(input_dir: str, output_dir: str) -> None:
+    """
+    Splits search between different processes, searches for any missing directorties or files.
+    :param input_dir: The input directory to validate against
+    :param output_dir: The output directort to validate
+    :return: None
+    """
     logging.info("Finding files")
 
     pool = mp.Pool(mp.cpu_count() // MULTIPROCESS_DIVISOR)
