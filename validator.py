@@ -32,7 +32,7 @@ def process_directory(input_dir: str, output_dir: str, input_subdirs: list) -> N
 
     if len(diff) > 0:
         print("Difference between: " + input_dir + " and " + output_dir + "(" + str(len(diff)) + ")")
-        logging.info(str(diff))
+        logging.info("Difference between: " + input_dir + " and " + output_dir + "(" + str(len(diff)) + ")\n" + str(diff))
     else:
         logging.debug("No difference between " + input_dir + " and " + output_dir)
 
@@ -56,15 +56,17 @@ def process_file(input_dir: str, output_dir: str) -> None:
             meta_files.append(f.replace(".json", ""))
 
     source_diff = input_files - set(source_files)
-    meta_diff = input_files- set(meta_files)
+    meta_diff = input_files - set(meta_files)
 
     if len(source_diff) > 0:
         print("Missing source files in: " + output_dir + ":\n" + str(source_diff))
+        logging.info("Missing source files in: " + output_dir + ":\n" + str(source_diff))
     else:
         logging.debug("No missing source files in: " + output_dir)
 
     if len(meta_diff) > 0:
         print("Missing meta files: " + output_dir + ":\n" + str(meta_diff))
+        logging.info("Missing meta files: " + output_dir + ":\n" + str(meta_diff))
     else:
         logging.debug("No missing meta files in: " + output_dir)
 
@@ -82,7 +84,8 @@ def find_diff(input_dir: str, output_dir: str, input_subdirs: list) -> None:
             logging.debug("Processing files")
             process_file(input_dir, output_dir)
         else:
-            logging.debug("Directory does not exist: " + input_dir + ":" + output_dir)
+            print("Directory does not exist: " + input_dir + ":" + output_dir)
+            logging.info("Directory does not exist: " + input_dir + ":" + output_dir)
     else:
         logging.debug("Processing directory")
         process_directory(input_dir, output_dir, input_subdirs)
@@ -103,7 +106,6 @@ def main(input_dir: str, output_dir: str) -> None:
         new_root = root.replace(input_dir, output_dir)
         pool.apply(find_diff, args=(root, new_root, dirs))
 
-    pool.join()
     pool.close()
     print("Complete")
 
