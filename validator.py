@@ -56,7 +56,8 @@ def process_file(input_dir: str, output_dir: str) -> None:
             elif f.endswith(".json"):
                 meta_files.append(f.replace(".json", ""))
     except FileNotFoundError as e:
-        logging.critical("File not found: " + e)
+        logging.critical("File not found: ")
+        logging.critical(e)
         return
 
     source_diff = input_files - set(source_files)
