@@ -49,16 +49,11 @@ def process_file(input_dir: str, output_dir: str) -> None:
     source_files = []
     meta_files = []
 
-    try:
-        for f in os.listdir(output_dir):
-            if f.endswith(".java"):
-                source_files.append(f.replace(".java", ""))
-            elif f.endswith(".json"):
-                meta_files.append(f.replace(".json", ""))
-    except FileNotFoundError as e:
-        logging.critical("File not found: ")
-        logging.critical(e)
-        return
+    for f in os.listdir(output_dir):
+        if f.endswith(".java"):
+            source_files.append(f.replace(".java", ""))
+        elif f.endswith(".json"):
+            meta_files.append(f.replace(".json", ""))
 
     source_diff = input_files - set(source_files)
     meta_diff = input_files- set(meta_files)
@@ -83,8 +78,11 @@ def find_diff(input_dir: str, output_dir: str, input_subdirs: list) -> None:
     :return: None
     """
     if len(input_subdirs) == 0:
-        logging.debug("Processing files")
-        process_file(input_dir, output_dir)
+        if os.path.exists(input_dir) and os.path.exists(output_dir):
+            logging.debug("Processing files")
+            process_file(input_dir, output_dir)
+        else:
+            logging.debug("Directory does not exist: " + input_dir + ":" + output_dir)
     else:
         logging.debug("Processing directory")
         process_directory(input_dir, output_dir, input_subdirs)
