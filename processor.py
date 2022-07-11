@@ -67,6 +67,11 @@ def convert_file(root: str, file: str, new_root: str) -> None:
     """
 
     path = os.path.join(root, file)
+
+    if path == "/data/mini/srcml-2019-09/project-17094036/src-83472986.xml":
+        # Don't process extremely large file
+        return
+
     with open(path, 'rb') as src_ml:
         xml_tree = ElementTree.parse(src_ml).getroot()
 
