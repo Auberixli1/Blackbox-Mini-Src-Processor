@@ -93,13 +93,14 @@ def convert_file(root: str, file: str, new_root: str) -> None:
 
     raw_src = ElementTree.tostring(latest_version, encoding='unicode', method='text')
 
-    metadata = json.dumps({'compile_result': compile_result, 'compile_messages': compile_messages})
-
     source_file = file.replace(".xml", ".java")
     meta_file = file.replace(".xml", ".json")
 
     source_path = os.path.join(new_root, source_file)
     meta_path = os.path.join(new_root, meta_file)
+
+    metadata = json.dumps({'src_file': source_path,
+                           'compile_result': compile_result, 'compile_messages': compile_messages})
 
     try:
         logging.info("Converting: " + source_path + "/.json")
