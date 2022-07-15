@@ -109,7 +109,6 @@ def convert_file(root: str, file: str, new_root: str) -> None:
 
     try:
         logging.info("Converting: " + source_path + "/.json")
-        # print("Converting", source_path, " on ", mp.current_process())
         write_file(raw_src, source_path)
         write_file(metadata, meta_path)
 
